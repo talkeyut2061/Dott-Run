@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Security;
 using TMPro;
 using UnityEngine;
@@ -17,17 +18,16 @@ public class GameManager : MonoBehaviour
     [Header("Button"), Tooltip("Button")]
     [SerializeField] private Button _start;
     [SerializeField] private Button _option;
-    [SerializeField] private Button _selectOneButton;
-    [SerializeField] private Button _selectThreeButton;
+    [SerializeField] private GameObject _selectButton;
 
 
     [Header("Text"), Tooltip("TMP_Text")]
 
-    [SerializeField] private TMP_Text _titleText;      //タイトル
-    [SerializeField] private TMP_Text _questionTemplate;    //「質問」のテキスト
+    [SerializeField] private TMP_Text _titleText;      //タイトルUI
+    [SerializeField] private TMP_Text _question;    //「質問」のテキスト
+    [SerializeField] private TMP_Text _mainQuestion;    //出題する質問内容
     [SerializeField] private List<string> _questionText;    //質問内容
-    [SerializeField] private List<Button> _select;          //選択肢
-    
+    [SerializeField] private TMP_Text _pointText;           //得点テキスト
 
     [Header("Canvas"), Tooltip("CanvasCompornent")]
     [SerializeField] private CanvasGroup _canvasGroup;
@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour
     private float _alpha;
     private float _fadeIn = 1f;
     private float _fadeOut = 0f;
+
+    private int _searchPoint;
 
 
     void Awake()
@@ -62,7 +64,7 @@ public class GameManager : MonoBehaviour
             StartCoroutine(GameStart());
         }
 
-        else if(_option.interactable == false)
+        else if (_option.interactable == false)
         {
             Debug.Log($"現在、開発中");
         }
@@ -93,13 +95,38 @@ public class GameManager : MonoBehaviour
 
     IEnumerator Select()
     {
-        yield return new WaitForSeconds(1f);
+        GameObject select = _selectButton;
+
         int random = UnityEngine.Random.Range(1, _questionText.Count);
-        string Question = _questionText[random];
-        
+        string quest = _questionText[random];
 
+  
+        if (_questionText != null)
+        {
+            Debug.Log("無事に通過する");
+            _mainQuestion.text = quest;
+            yield return new WaitForSeconds(1f);
+            _question.enabled = false;
+            yield return new WaitForSeconds(1f);
+            Debug.Log("Question");
+            _question.enabled = true;
+            yield return new WaitForSeconds(3f);
+            _mainQuestion.enabled = true;
+            _questionText.Remove(_questionText[random]);
+            yield return new WaitForSeconds(1f);
+            select.SetActive(true);
+            
+        }
+        else
+        {
+            yield return new WaitForSeconds(1f);
+            StartCoroutine(FinishGame());
+        }
 
+    }
 
-        yield return new WaitForSeconds(1f);
+    IEnumerator FinishGame()
+    {
+        yield return null;
     }
 }
