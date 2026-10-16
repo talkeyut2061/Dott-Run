@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,43 +23,40 @@ public class GameManager : MonoBehaviour
 
 
     [Header("Text"), Tooltip("TMP_Text")]
-    [SerializeField] private TMP_Text _titleText;      //タイトルUI
-    [SerializeField] private TMP_Text _question;    //「質問」のテキスト
-    [SerializeField] private TMP_Text _mainQuestion;    //出題する質問内容
-    [SerializeField] private List<string> _questionText;    //質問内容
-    [SerializeField] private List<string> _geoGraphyNameText;
-    [SerializeField] private TMP_Text _endText;
-    [SerializeField] private TMP_Text _pointText;           //得点テキスト
+
+    [SerializeField] private TMP_Text _titleText;      //タイトルのテキスト
+    [SerializeField] private TMP_Text _sitsumonText;    //「まずは質問」のテキスト
+    [SerializeField] private TMP_Text _question;        //出題する質問内容
+    [SerializeField] private List<string> _questionText;    //出題する質問内容のリスト
+    [SerializeField] private List<string> _geoGraphyNameText; //地名のテキスト
+    [SerializeField] private TMP_Text _endText;             //「終了」のテキスト
+    [SerializeField] private TMP_Text _resultText;         //「診断結果」のテキスト
+    [SerializeField] private TMP_Text _scoreText;           //得点テキスト
+    [SerializeField] private TMP_Text _onePhraseText;       //診断結果の一言
 
     [Header("Canvas"), Tooltip("CanvasCompornent")]
-    [SerializeField] private CanvasGroup _titleCanvas;
-    [SerializeField] private CanvasGroup _endCanvas;
-    [SerializeField] private CanvasGroup _resultCanvas;
-
-    [SerializeField] private Image _endBack;
-
+    [SerializeField] private CanvasGroup _titleCanvas;    
+    [SerializeField] private CanvasGroup _endCanvas;      //ゲーム終了時のImageコンポーネント   
+    [SerializeField] private Image _endBack;              //「終了」テキストの親
     [SerializeField] private RectTransform _rect;
 
     [Header("Float")]
     [SerializeField] private float _maxHeight;
-    private float _alpha;
-    private float _fadeIn = 1f;
+    private float _alpha;                            //α値
+    private float _fadeIn = 1f;                      
     private float _fadeOut = 0f;
-    private int _searchPoint;
+
+    private int _searchPoint;                        //得点
+
 
     void Awake()
     {
-        
+        _alpha = _titleCanvas.alpha;
+
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        _alpha = _titleCanvas.alpha;
-    }
 
-    // Update is called once per frame
-
-    public void ButtonActive()
+     private void ButtonActive()
     {
         if (_start.interactable == false)
         {
@@ -72,6 +68,7 @@ public class GameManager : MonoBehaviour
             Debug.Log($"現在、開発中");
         }
     }
+
     private IEnumerator GameStart()
     {
 
@@ -92,41 +89,39 @@ public class GameManager : MonoBehaviour
 
     IEnumerator Select()
     {
-        
         GameObject select = _selectButton;
-        float speed = 1f;
+        float speed = 1.5f;
         int random = Random.Range(0, _questionText.Count);
         string quest = _questionText[random];
-        _mainQuestion.enabled = false;
+       
 
-        yield return new WaitForSeconds(speed);
+        yield return new WaitForSeconds(speed); 
         _question.enabled = false;
+        _sitsumonText.enabled = false;
         select.SetActive(false);
 
-        if (_questionText != null)
-        {
-            Debug.Log($"無事に通過する。 現在の評価点 : {_searchPoint}");
-            _mainQuestion.text = quest;
-            yield return new WaitForSeconds(speed);
-            Debug.Log("Question");
-            _voice.PlayOneShot(_questionVoice);
-            _question.enabled = true;
-            _yesButton.interactable = true;
-            _noButton.interactable = true;
-            yield return new WaitForSeconds(speed);
-            _mainQuestion.enabled = true;
-            _questionText.Remove(_questionText[random]);
-            yield return new WaitForSeconds(speed);
-            
-            select.SetActive(true);
-            
-        }
-    }
-    
+        Debug.Log($"無事に通過する。 現在の評価点 : {_searchPoint}");
+        _question.text = quest;
+        yield return new WaitForSeconds(speed);
 
-    public void SelectActive()
+        Debug.Log("Question");
+        _voice.PlayOneShot(_questionVoice);
+        _sitsumonText.enabled = true;
+        _yesButton.interactable = true;
+        _noButton.interactable = true;
+        yield return new WaitForSeconds(speed);
+
+        _question.enabled = true;
+        _questionText.Remove(_questionText[random]);
+        yield return new WaitForSeconds(speed);
+
+        select.SetActive(true);
+    }
+
+
+    private void SelectActive()
     {
-        int p = Random.Range(1,20);
+        int p = Random.Range(1, 20);
         _searchPoint += p;
         if (_questionText.Count >= 1)
         {
@@ -134,64 +129,62 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            StartCoroutine(FinishGame(_rect));
+            StartCoroutine(FinishGame());
         }
+
     }
-    IEnumerator FinishGame(RectTransform rectTrans)
-
-    {   _endCanvas.alpha = _alpha;
-        float speed = 1f;
-        float EndSpeed = 150f;
-        float CurrentHeight = rectTrans.rect.height;
-
-
-        GameObject q = _question.gameObject;
-        GameObject main = _mainQuestion.gameObject;
-        GameObject end = _endText.gameObject;
-        GameObject EndCanvas = _endCanvas.gameObject;
-        GameObject EndBack = _endBack.gameObject;
-        GameObject s = _selectButton;
-        
-        
-        
-        
-
-        yield return new WaitForSeconds(speed);
-        q.SetActive(false);
-        s.SetActive(false);
-        main.SetActive(false);
-        EndBack.SetActive(true);
-
-        yield return new WaitForSeconds(speed);
-        Debug.Log($"ゲームを終了します。お疲れ様です！！！");
-        while(!Mathf.Approximately(CurrentHeight, _maxHeight))
-        {
-            CurrentHeight = Mathf.MoveTowards(CurrentHeight, _maxHeight, EndSpeed * Time.unscaledDeltaTime);
-            yield return null;
-        }
-
-        end.SetActive(true);
-        EndCanvas.SetActive(true);
-        yield return new WaitForSeconds(speed);
-        while(!Mathf.Approximately(_alpha, _fadeIn))
-        {
-            _alpha = Mathf.MoveTowards(_alpha, _fadeIn, speed * Time.unscaledDeltaTime);
+    IEnumerator FinishGame()
+    {
             _endCanvas.alpha = _alpha;
-            yield return null;
-        }
+            float speed = 1f;
+            GameObject q = _sitsumonText.gameObject;
+            GameObject m = _question.gameObject;
+            GameObject EndCanvas = _endCanvas.gameObject;
+            GameObject EndBack = _endBack.gameObject;
+            GameObject Select = _selectButton;
+            GameObject Score = _scoreText.gameObject;
 
-        end.SetActive(false);
+            yield return new WaitForSeconds(speed);
+            q.SetActive(false);
+            Select.SetActive(false);
+            m.SetActive(false);
+
+            yield return new WaitForSeconds(speed);
+            Debug.Log($"ゲームを終了します。お疲れ様です！！！");
+            EndBack.SetActive(true);
+            EndCanvas.SetActive(true);
+            yield return new WaitForSeconds(speed);
+            while (!Mathf.Approximately(_alpha, _fadeIn))
+            {
+                _alpha = Mathf.MoveTowards(_alpha, _fadeIn, speed * Time.unscaledDeltaTime);
+                _endCanvas.alpha = _alpha;
+                yield return null;
+            }
+            
+            //end.SetActive(false);
+            yield return new WaitForSeconds(speed);
+            EndBack.SetActive(false);
+        
+        
+        while (!Mathf.Approximately(_alpha, _fadeOut))
+            {
+                _alpha = Mathf.MoveTowards(_alpha, _fadeOut, speed * Time.unscaledDeltaTime);
+                _endCanvas.alpha = _alpha;
+                yield return null;
+            } 
+        EndCanvas.SetActive(false);
+        _resultText.enabled = true;
         yield return new WaitForSeconds(speed);
 
-        while(!Mathf.Approximately(_alpha,_fadeOut))
-        {
-            _alpha = Mathf.MoveTowards(_alpha, _fadeOut, speed * Time.unscaledDeltaTime);
-            _endCanvas.alpha = _alpha;
-            yield return null;
-        }
-        while (!Mathf.Approximately(_alpha,_fadeIn))
-        {
-            _alpha = Mathf.MoveTowards(_alpha,_fadeIn, speed * Time.unscaledDeltaTime);
-        }
+        _scoreText.text = $"得点  {_searchPoint}" + "点";
+        yield return new WaitForSeconds(speed);
+
+        int n = Random.Range(1, _geoGraphyNameText.Count);
+        yield return new WaitForSeconds(speed);
+
+        _scoreText.gameObject.SetActive(true);
+        yield return new WaitForSeconds(speed);
+        _onePhraseText.gameObject.SetActive(true);
+        _onePhraseText.text += $"{_geoGraphyNameText[n]}";
     }
 }
